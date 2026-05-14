@@ -10,6 +10,7 @@ Hardened by [Chainguard](https://www.chainguard.dev) from the upstream action at
 |---------|-----|-----------------|
 | v1.10.0 | [`v1.10.0`](https://github.com/chainguard-actions/pr-size-labeler/tree/v1.10.0) | — |
 | v1.10.1 | [`v1.10.1`](https://github.com/chainguard-actions/pr-size-labeler/tree/v1.10.1) | — |
+| v1.10.2 | [`v1.10.2`](https://github.com/chainguard-actions/pr-size-labeler/tree/v1.10.2) | — |
 | v1.10.3 | [`v1.10.3`](https://github.com/chainguard-actions/pr-size-labeler/tree/v1.10.3) | — |
 | v1.10.4 | [`v1.10.4`](https://github.com/chainguard-actions/pr-size-labeler/tree/v1.10.4) | — |
 
