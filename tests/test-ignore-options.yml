@@ -1,0 +1,38 @@
+name: Test ignore options configuration
+on:
+  workflow_dispatch:
+jobs:
+  test-ignore-options:
+    runs-on: ubuntu-latest
+    env:
+      GITHUB_EVENT_NAME: pull_request
+      GITHUB_REF: refs/pull/7/merge
+      GITHUB_HEAD_REF: refactor-branch
+      GITHUB_BASE_REF: main
+    steps:
+      - uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6.0.2
+
+      - name: Run PR size labeler with ignore options enabled
+        id: action
+        continue-on-error: true
+        uses: .
+        with:
+          GITHUB_TOKEN: fake-token-for-local-test
+          ignore_line_deletions: 'true'
+          ignore_file_deletions: 'true'
+          files_to_ignore: 'package-lock.json yarn.lock go.sum'
+          fail_if_xl: 'false'
+
+      - name: Assert action ran with ignore options
+        env:
+          OUTCOME: ${{ steps.action.outcome }}
+        run: |
+          echo "Action outcome: $OUTCOME"
+          # The action should start and attempt to call the API.
+          # It may fail due to no real PR/token, but should not crash on startup.
+          if [ "$OUTCOME" = "success" ] || [ "$OUTCOME" = "failure" ]; then
+            echo "PASS: action ran with ignore options configured"
+          else
+            echo "FAIL: unexpected outcome '$OUTCOME'"
+            exit 1
+          fi

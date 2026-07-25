@@ -1,0 +1,118 @@
+name: Test XS PR labeling with mock API
+on:
+  workflow_dispatch:
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    env:
+      GITHUB_REPOSITORY: test-owner/test-repo
+    steps:
+      - uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6.0.2
+
+      # Overwrite the act event file with a pull_request event so the Docker
+      # action can read the PR number from GITHUB_EVENT_PATH.
+      - name: Setup PR event file
+        run: |
+          echo '{"pull_request":{"number":42}}' > "$GITHUB_EVENT_PATH"
+
+      # Start a mock GitHub API server. We bind to 0.0.0.0 so it's reachable
+      # from other Docker containers on the same network. We also capture the
+      # runner container's IP so the Docker action can reach the mock server.
+      - name: Start mock GitHub API server
+        run: |
+          python3 - <<'PYEOF' &
+          import http.server, json, threading
+
+          class Handler(http.server.BaseHTTPRequestHandler):
+              def log_message(self, fmt, *args):
+                  pass
+              def do_GET(self):
+                  self.send_response(200)
+                  self.send_header('Content-Type', 'application/json')
+                  self.end_headers()
+                  path = self.path
+                  if '/pulls/' in path and '/files' not in path:
+                      body = json.dumps({'additions': 5, 'deletions': 2, 'labels': []})
+                  elif '/issues/' in path and '/labels' in path:
+                      body = json.dumps([])
+                  elif '/issues/' in path:
+                      body = json.dumps({'additions': 5, 'deletions': 2, 'labels': []})
+                  else:
+                      body = json.dumps({})
+                  self.wfile.write(body.encode())
+              def do_PATCH(self):
+                  length = int(self.headers.get('Content-Length', 0))
+                  body = self.rfile.read(length)
+                  with open('/tmp/applied-labels-xs.json', 'w') as f:
+                      f.write(body.decode())
+                  self.send_response(200)
+                  self.send_header('Content-Type', 'application/json')
+                  self.end_headers()
+                  self.wfile.write(b'{}')
+              def do_POST(self):
+                  length = int(self.headers.get('Content-Length', 0))
+                  self.rfile.read(length)
+                  self.send_response(201)
+                  self.send_header('Content-Type', 'application/json')
+                  self.end_headers()
+                  self.wfile.write(b'{}')
+              def do_DELETE(self):
+                  self.send_response(204)
+                  self.end_headers()
+
+          server = http.server.HTTPServer(('0.0.0.0', 18080), Handler)
+          t = threading.Thread(target=server.serve_forever)
+          t.daemon = True
+          t.start()
+          import time; time.sleep(3600)
+          PYEOF
+          sleep 2
+          # Get the IP address of this runner container so Docker action containers can reach us
+          RUNNER_IP=$(hostname -I | awk '{print $1}')
+          echo "MOCK_API_URL=http://${RUNNER_IP}:18080" >> "$GITHUB_ENV"
+          echo "Mock server started at http://${RUNNER_IP}:18080"
+          curl -sf "http://${RUNNER_IP}:18080/" || echo "Mock server check done"
+
+      # Run the action against the mock API
+      - id: action
+        uses: .
+        continue-on-error: true
+        with:
+          GITHUB_TOKEN: fake-token
+          github_api_url: ${{ env.MOCK_API_URL }}
+          xs_label: size/xs
+          xs_max_size: "10"
+          s_label: size/s
+          s_max_size: "100"
+          m_label: size/m
+          m_max_size: "500"
+          l_label: size/l
+          l_max_size: "1000"
+          xl_label: size/xl
+          fail_if_xl: "false"
+
+      - name: Assert action succeeded for XS PR
+        env:
+          OUTCOME: ${{ steps.action.outcome }}
+        run: |
+          echo "outcome: $OUTCOME"
+          if [ "$OUTCOME" != "success" ]; then
+            echo "FAIL: expected action to succeed for XS PR (7 total changes < 10 xs_max_size)"
+            exit 1
+          fi
+          echo "PASS: action correctly processed XS PR"
+
+      - name: Assert size/xs label was applied
+        run: |
+          if [ ! -f /tmp/applied-labels-xs.json ]; then
+            echo "FAIL: no PATCH request was made to apply labels"
+            exit 1
+          fi
+          applied=$(cat /tmp/applied-labels-xs.json)
+          echo "Applied labels payload: $applied"
+          if echo "$applied" | grep -q 'size/xs'; then
+            echo "PASS: correct label 'size/xs' was applied"
+          else
+            echo "FAIL: expected label 'size/xs' to be applied, got: $applied"
+            exit 1
+          fi

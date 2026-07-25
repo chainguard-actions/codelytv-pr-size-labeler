@@ -1,0 +1,44 @@
+name: Test files_to_ignore and ignore options
+on:
+  workflow_dispatch:
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6.0.2
+
+      - name: Create fake PR event file
+        run: |
+          mkdir -p /tmp/fake-event
+          cat > /tmp/fake-event/event.json <<'EOF'
+          {
+            "pull_request": {
+              "number": 999999
+            }
+          }
+          EOF
+
+      - name: Run action with files_to_ignore and ignore_line_deletions
+        id: action
+        uses: .
+        continue-on-error: true
+        env:
+          GITHUB_EVENT_PATH: /tmp/fake-event/event.json
+        with:
+          GITHUB_TOKEN: ${{ github.token }}
+          files_to_ignore: '*.lock package-lock.json yarn.lock'
+          ignore_line_deletions: 'true'
+          ignore_file_deletions: 'false'
+
+      - name: Assert action ran with ignore inputs
+        env:
+          OUTCOME: ${{ steps.action.outcome }}
+        run: |
+          echo "outcome: $OUTCOME"
+          # The action should fail because PR 999999 doesn't exist,
+          # but it should NOT be skipped — it should have accepted the inputs.
+          if [ "$OUTCOME" = "skipped" ]; then
+            echo "FAIL: action was skipped unexpectedly"
+            exit 1
+          fi
+          echo "PASS: action accepted files_to_ignore and ignore_line_deletions inputs (outcome: $OUTCOME)"

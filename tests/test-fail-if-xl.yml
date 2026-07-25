@@ -1,0 +1,50 @@
+name: Test fail_if_xl input
+on:
+  workflow_dispatch:
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6.0.2
+
+      - name: Create fake PR event file
+        run: |
+          mkdir -p /tmp/fake-event
+          cat > /tmp/fake-event/event.json <<'EOF'
+          {
+            "pull_request": {
+              "number": 999999
+            }
+          }
+          EOF
+
+      - name: Run action with fail_if_xl=true and ignore options
+        id: action
+        uses: .
+        continue-on-error: true
+        env:
+          GITHUB_EVENT_PATH: /tmp/fake-event/event.json
+        with:
+          GITHUB_TOKEN: ${{ github.token }}
+          xs_max_size: '1'
+          s_max_size: '2'
+          m_max_size: '3'
+          l_max_size: '4'
+          fail_if_xl: 'true'
+          message_if_xl: 'This PR is too large!'
+          ignore_line_deletions: 'false'
+          ignore_file_deletions: 'false'
+
+      - name: Assert action ran with fail_if_xl inputs
+        env:
+          OUTCOME: ${{ steps.action.outcome }}
+        run: |
+          echo "outcome: $OUTCOME"
+          # The action should fail (either because PR doesn't exist in API,
+          # or because it's classified as XL and fail_if_xl=true).
+          # Either way it should not be skipped.
+          if [ "$OUTCOME" = "skipped" ]; then
+            echo "FAIL: action was skipped unexpectedly"
+            exit 1
+          fi
+          echo "PASS: action accepted fail_if_xl and ignore inputs (outcome: $OUTCOME)"

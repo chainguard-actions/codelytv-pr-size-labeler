@@ -1,0 +1,127 @@
+name: Test ignore_line_deletions option
+on:
+  workflow_dispatch:
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    env:
+      GITHUB_REPOSITORY: test-owner/test-repo
+    steps:
+      - uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6.0.2
+
+      # Overwrite the act event file with a pull_request event so the Docker
+      # action can read the PR number from GITHUB_EVENT_PATH.
+      - name: Setup PR event file
+        run: |
+          echo '{"pull_request":{"number":42}}' > "$GITHUB_EVENT_PATH"
+
+      # Mock API: PR has 8 additions and 500 deletions.
+      # With ignore_line_deletions=false: total=508 -> size/m
+      # With ignore_line_deletions=true:  total=8   -> size/xs
+      # We test with ignore_line_deletions=true and expect size/xs label.
+      # When ignore_line_deletions=true, the action uses the /files endpoint.
+      - name: Start mock GitHub API server
+        run: |
+          python3 - <<'PYEOF' &
+          import http.server, json, threading
+
+          class Handler(http.server.BaseHTTPRequestHandler):
+              def log_message(self, fmt, *args):
+                  pass
+              def do_GET(self):
+                  self.send_response(200)
+                  self.send_header('Content-Type', 'application/json')
+                  self.end_headers()
+                  path = self.path
+                  if '/files' in path:
+                      files = [
+                          {'filename': 'foo.py', 'status': 'modified', 'additions': 5, 'deletions': 300},
+                          {'filename': 'bar.py', 'status': 'modified', 'additions': 3, 'deletions': 200},
+                      ]
+                      body = json.dumps(files)
+                  elif '/pulls/' in path:
+                      body = json.dumps({'additions': 8, 'deletions': 500, 'labels': []})
+                  elif '/issues/' in path and '/labels' in path:
+                      body = json.dumps([])
+                  elif '/issues/' in path:
+                      body = json.dumps({'additions': 8, 'deletions': 500, 'labels': []})
+                  else:
+                      body = json.dumps({})
+                  self.wfile.write(body.encode())
+              def do_PATCH(self):
+                  length = int(self.headers.get('Content-Length', 0))
+                  body = self.rfile.read(length)
+                  with open('/tmp/applied-labels-ignore-del.json', 'w') as f:
+                      f.write(body.decode())
+                  self.send_response(200)
+                  self.send_header('Content-Type', 'application/json')
+                  self.end_headers()
+                  self.wfile.write(b'{}')
+              def do_POST(self):
+                  length = int(self.headers.get('Content-Length', 0))
+                  self.rfile.read(length)
+                  self.send_response(201)
+                  self.send_header('Content-Type', 'application/json')
+                  self.end_headers()
+                  self.wfile.write(b'{}')
+              def do_DELETE(self):
+                  self.send_response(204)
+                  self.end_headers()
+
+          server = http.server.HTTPServer(('0.0.0.0', 18083), Handler)
+          t = threading.Thread(target=server.serve_forever)
+          t.daemon = True
+          t.start()
+          import time; time.sleep(3600)
+          PYEOF
+          sleep 2
+          RUNNER_IP=$(hostname -I | awk '{print $1}')
+          echo "MOCK_API_URL=http://${RUNNER_IP}:18083" >> "$GITHUB_ENV"
+          echo "Mock server started at http://${RUNNER_IP}:18083"
+          curl -sf "http://${RUNNER_IP}:18083/" || echo "Mock server check done"
+
+      # Run the action with ignore_line_deletions=true
+      - id: action
+        uses: .
+        continue-on-error: true
+        with:
+          GITHUB_TOKEN: fake-token
+          github_api_url: ${{ env.MOCK_API_URL }}
+          xs_label: size/xs
+          xs_max_size: "10"
+          s_label: size/s
+          s_max_size: "100"
+          m_label: size/m
+          m_max_size: "500"
+          l_label: size/l
+          l_max_size: "1000"
+          xl_label: size/xl
+          fail_if_xl: "false"
+          ignore_line_deletions: "true"
+
+      - name: Assert action succeeded
+        env:
+          OUTCOME: ${{ steps.action.outcome }}
+        run: |
+          echo "outcome: $OUTCOME"
+          if [ "$OUTCOME" != "success" ]; then
+            echo "FAIL: expected action to succeed with ignore_line_deletions=true"
+            exit 1
+          fi
+          echo "PASS: action succeeded"
+
+      - name: Assert size/xs label was applied (deletions ignored)
+        run: |
+          if [ ! -f /tmp/applied-labels-ignore-del.json ]; then
+            echo "FAIL: no PATCH request was made to apply labels"
+            exit 1
+          fi
+          applied=$(cat /tmp/applied-labels-ignore-del.json)
+          echo "Applied labels payload: $applied"
+          # Only 8 additions counted (deletions ignored), so should be size/xs (< 10)
+          if echo "$applied" | grep -q 'size/xs'; then
+            echo "PASS: correct label 'size/xs' was applied when ignoring deletions"
+          else
+            echo "FAIL: expected label 'size/xs' to be applied (only 8 additions counted), got: $applied"
+            exit 1
+          fi

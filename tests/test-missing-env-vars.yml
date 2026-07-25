@@ -1,0 +1,100 @@
+name: Test action fails when required configuration is missing or invalid
+on:
+  workflow_dispatch:
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    env:
+      GITHUB_REPOSITORY: test-owner/test-repo
+    steps:
+      - uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6.0.2
+
+      # Overwrite the act event file with a pull_request event so the Docker
+      # action can read the PR number from GITHUB_EVENT_PATH.
+      - name: Setup PR event file
+        run: |
+          echo '{"pull_request":{"number":42}}' > "$GITHUB_EVENT_PATH"
+
+      # Start a mock GitHub API server that returns an XL PR.
+      # The action is configured with fail_if_xl=true, so it should fail.
+      - name: Start mock GitHub API server
+        run: |
+          python3 - <<'PYEOF' &
+          import http.server, json, threading
+
+          class Handler(http.server.BaseHTTPRequestHandler):
+              def log_message(self, fmt, *args):
+                  pass
+              def do_GET(self):
+                  self.send_response(200)
+                  self.send_header('Content-Type', 'application/json')
+                  self.end_headers()
+                  path = self.path
+                  if '/pulls/' in path and '/files' not in path:
+                      body = json.dumps({'additions': 2000, 'deletions': 500, 'labels': []})
+                  elif '/issues/' in path and '/labels' in path:
+                      body = json.dumps([])
+                  elif '/issues/' in path:
+                      body = json.dumps({'additions': 2000, 'deletions': 500, 'labels': []})
+                  else:
+                      body = json.dumps({})
+                  self.wfile.write(body.encode())
+              def do_PATCH(self):
+                  length = int(self.headers.get('Content-Length', 0))
+                  self.rfile.read(length)
+                  self.send_response(200)
+                  self.send_header('Content-Type', 'application/json')
+                  self.end_headers()
+                  self.wfile.write(b'{}')
+              def do_POST(self):
+                  length = int(self.headers.get('Content-Length', 0))
+                  self.rfile.read(length)
+                  self.send_response(201)
+                  self.send_header('Content-Type', 'application/json')
+                  self.end_headers()
+                  self.wfile.write(b'{}')
+              def do_DELETE(self):
+                  self.send_response(204)
+                  self.end_headers()
+
+          server = http.server.HTTPServer(('0.0.0.0', 18084), Handler)
+          t = threading.Thread(target=server.serve_forever)
+          t.daemon = True
+          t.start()
+          import time; time.sleep(3600)
+          PYEOF
+          sleep 2
+          RUNNER_IP=$(hostname -I | awk '{print $1}')
+          echo "MOCK_API_URL=http://${RUNNER_IP}:18084" >> "$GITHUB_ENV"
+          echo "Mock server started at http://${RUNNER_IP}:18084"
+          curl -sf "http://${RUNNER_IP}:18084/" || echo "Mock server check done"
+
+      # The action is configured with fail_if_xl=true and the mock returns an XL PR (2500 changes > 1000).
+      # The action should fail because the PR is XL and fail_if_xl=true.
+      - id: action
+        uses: .
+        continue-on-error: true
+        with:
+          GITHUB_TOKEN: fake-token
+          github_api_url: ${{ env.MOCK_API_URL }}
+          xs_label: size/xs
+          xs_max_size: "10"
+          s_label: size/s
+          s_max_size: "100"
+          m_label: size/m
+          m_max_size: "500"
+          l_label: size/l
+          l_max_size: "1000"
+          xl_label: size/xl
+          fail_if_xl: "true"
+
+      - name: Assert action failed due to XL PR with fail_if_xl=true
+        env:
+          OUTCOME: ${{ steps.action.outcome }}
+        run: |
+          echo "outcome: $OUTCOME"
+          if [ "$OUTCOME" != "failure" ]; then
+            echo "FAIL: expected action to fail for XL PR with fail_if_xl=true, got outcome=$OUTCOME"
+            exit 1
+          fi
+          echo "PASS: action correctly failed"
