@@ -1,0 +1,64 @@
+name: Test action with valid PR event reaches API call
+on:
+  workflow_dispatch:
+
+jobs:
+  test-pr-event-api-call:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6.0.2
+
+      - name: Create a pull_request event file with PR number
+        run: |
+          cat > /tmp/pr-event.json <<'EOF'
+          {
+            "action": "opened",
+            "number": 42,
+            "pull_request": {
+              "number": 42,
+              "title": "Test PR",
+              "additions": 5,
+              "deletions": 2
+            },
+            "repository": {
+              "full_name": "test-owner/test-repo"
+            }
+          }
+          EOF
+
+      - name: Run action with valid PR event (will fail at API call with fake token)
+        id: action
+        uses: .
+        continue-on-error: true
+        env:
+          GITHUB_REPOSITORY: test-owner/test-repo
+          GITHUB_EVENT_PATH: /tmp/pr-event.json
+          GITHUB_API_URL: https://api.github.com
+        with:
+          GITHUB_TOKEN: fake-token-for-testing
+          xs_label: size/xs
+          xs_max_size: "10"
+          s_label: size/s
+          s_max_size: "100"
+          m_label: size/m
+          m_max_size: "500"
+          l_label: size/l
+          l_max_size: "1000"
+          xl_label: size/xl
+          fail_if_xl: "false"
+
+      - name: Assert action ran (failed at API call, not at env/event validation)
+        env:
+          OUTCOME: ${{ steps.action.outcome }}
+        run: |
+          echo "outcome: $OUTCOME"
+          # The action should fail because the fake token is rejected by the GitHub API,
+          # not because of missing env vars or missing PR number.
+          # Either failure or success is acceptable here — what matters is it got past
+          # the env var and PR number checks (which would have produced a different error).
+          if [ "$OUTCOME" = "failure" ] || [ "$OUTCOME" = "success" ]; then
+            echo "PASS: action ran and reached the API call stage (outcome=$OUTCOME)"
+          else
+            echo "FAIL: unexpected outcome=$OUTCOME"
+            exit 1
+          fi

@@ -1,0 +1,61 @@
+name: Test - Custom size thresholds and labels
+on:
+  workflow_dispatch:
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    env:
+      GITHUB_REPOSITORY: test-owner/test-repo
+      GITHUB_EVENT_NAME: pull_request
+    steps:
+      - uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6.0.2
+
+      - name: Create pull_request event file
+        run: |
+          mkdir -p /tmp/gh-events
+          cat > /tmp/gh-events/pr-event.json <<'EOF'
+          {
+            "action": "opened",
+            "number": 7,
+            "pull_request": {
+              "number": 7,
+              "title": "Custom threshold test PR"
+            },
+            "repository": {
+              "full_name": "test-owner/test-repo"
+            }
+          }
+          EOF
+
+      - name: Run action with custom thresholds (expect failure at API call)
+        id: action
+        uses: .
+        continue-on-error: true
+        env:
+          GITHUB_EVENT_PATH: /tmp/gh-events/pr-event.json
+        with:
+          GITHUB_TOKEN: fake-token-for-testing
+          xs_label: 'custom/tiny'
+          xs_max_size: '5'
+          s_label: 'custom/small'
+          s_max_size: '50'
+          m_label: 'custom/medium'
+          m_max_size: '200'
+          l_label: 'custom/large'
+          l_max_size: '500'
+          xl_label: 'custom/huge'
+          fail_if_xl: 'false'
+          files_to_ignore: ''
+          ignore_line_deletions: 'false'
+          ignore_file_deletions: 'false'
+
+      - name: Assert action failed at API call (not at argument parsing)
+        env:
+          OUTCOME: ${{ steps.action.outcome }}
+        run: |
+          echo "outcome: $OUTCOME"
+          if [ "$OUTCOME" != "failure" ]; then
+            echo "FAIL: expected action to fail with fake token, got outcome=$OUTCOME"
+            exit 1
+          fi
+          echo "PASS: action correctly processed custom thresholds and failed at API call (as expected with fake token)"

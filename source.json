@@ -1,6 +1,11 @@
 {
-  "owner": "codelytv",
+  "owner": "CodelyTV",
   "repo": "pr-size-labeler",
-  "version": "",
-  "url": "https://github.com/codelytv/pr-size-labeler"
+  "version": "v1.10.3",
+  "commit_sha": "4ec67706cd878fbc1c8db0a5dcd28b6bb412e85a",
+  "url": "https://github.com/CodelyTV/pr-size-labeler",
+  "policy_sha": "d636be7e43ef829af6e853da6b3c7566db9f72fe",
+  "test_policy_sha": "843adf9e4b8f85d0c08b27b9d0b09dd094b54702",
+  "test_agent_version": "2",
+  "harden_agent_version": "2"
 }
