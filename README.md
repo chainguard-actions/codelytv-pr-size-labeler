@@ -15,6 +15,7 @@ Hardened by [Chainguard](https://www.chainguard.dev) from the upstream action at
 | v1.10.4 | [`v1.10.4`](https://github.com/chainguard-actions/codelytv-pr-size-labeler/tree/v1.10.4) | [`095a41f`](https://github.com/codelytv/pr-size-labeler/commit/095a41fca88b8764fd9e008ad269bcdb82bb38b9) |
 | v1.10.5 | [`v1.10.5`](https://github.com/chainguard-actions/codelytv-pr-size-labeler/tree/v1.10.5) | [`3e1170d`](https://github.com/codelytv/pr-size-labeler/commit/3e1170d6309cd47d537ffd8b23854a8339057e9d) |
 | v1.11.0 | [`v1.11.0`](https://github.com/chainguard-actions/codelytv-pr-size-labeler/tree/v1.11.0) | [`e1869bf`](https://github.com/codelytv/pr-size-labeler/commit/e1869bf36de18c36cd132495c39f53c135b689a3) |
+| v1.11.1 | [`v1.11.1`](https://github.com/chainguard-actions/codelytv-pr-size-labeler/tree/v1.11.1) | [`4e3aa0f`](https://github.com/codelytv/pr-size-labeler/commit/4e3aa0f77f348c8066513d453515316ffa01a607) |
 
 ## Privacy
 
