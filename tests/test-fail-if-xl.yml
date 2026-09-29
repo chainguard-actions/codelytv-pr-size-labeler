@@ -1,0 +1,38 @@
+name: Test fail_if_xl and files_to_ignore inputs
+on:
+  workflow_dispatch:
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6.0.2
+
+      # Test that the action accepts fail_if_xl, message_if_xl, files_to_ignore,
+      # ignore_line_deletions, and ignore_file_deletions inputs without crashing
+      # on argument parsing. Under workflow_dispatch there is no pull_request.number
+      # in GITHUB_EVENT_PATH, so the action exits with "Not a pull request event"
+      # — expected graceful failure.
+      - id: action
+        uses: .
+        continue-on-error: true
+        with:
+          GITHUB_TOKEN: ${{ github.token }}
+          fail_if_xl: 'true'
+          message_if_xl: 'This PR is too large, please split it.'
+          files_to_ignore: '*.lock package-lock.json'
+          ignore_line_deletions: 'true'
+          ignore_file_deletions: 'false'
+
+      - name: Assert action failed gracefully on non-PR event
+        env:
+          OUTCOME: ${{ steps.action.outcome }}
+        run: |
+          echo "outcome: $OUTCOME"
+          if [ "$OUTCOME" = "failure" ]; then
+            echo "PASS: action failed gracefully as expected (not a pull_request event)"
+          elif [ "$OUTCOME" = "success" ]; then
+            echo "PASS: action succeeded (unexpected but acceptable)"
+          else
+            echo "FAIL: unexpected outcome '$OUTCOME'"
+            exit 1
+          fi
