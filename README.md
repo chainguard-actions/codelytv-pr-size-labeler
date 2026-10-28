@@ -6,17 +6,17 @@ Hardened by [Chainguard](https://www.chainguard.dev) from the upstream action at
 
 ## Versions
 
-| Version | Tag | Upstream commit |
-|---------|-----|-----------------|
-| v1.10.0 | [`v1.10.0`](https://github.com/chainguard-actions/codelytv-pr-size-labeler/tree/v1.10.0) | — |
-| v1.10.1 | [`v1.10.1`](https://github.com/chainguard-actions/codelytv-pr-size-labeler/tree/v1.10.1) | — |
-| v1.10.2 | [`v1.10.2`](https://github.com/chainguard-actions/codelytv-pr-size-labeler/tree/v1.10.2) | [`1c34223`](https://github.com/codelytv/pr-size-labeler/commit/1c3422395d899286d5ee2c809fd5aed264d5eb9b) |
-| v1.10.3 | [`v1.10.3`](https://github.com/chainguard-actions/codelytv-pr-size-labeler/tree/v1.10.3) | [`4ec6770`](https://github.com/codelytv/pr-size-labeler/commit/4ec67706cd878fbc1c8db0a5dcd28b6bb412e85a) |
-| v1.10.4 | [`v1.10.4`](https://github.com/chainguard-actions/codelytv-pr-size-labeler/tree/v1.10.4) | [`095a41f`](https://github.com/codelytv/pr-size-labeler/commit/095a41fca88b8764fd9e008ad269bcdb82bb38b9) |
-| v1.10.5 | [`v1.10.5`](https://github.com/chainguard-actions/codelytv-pr-size-labeler/tree/v1.10.5) | [`3e1170d`](https://github.com/codelytv/pr-size-labeler/commit/3e1170d6309cd47d537ffd8b23854a8339057e9d) |
-| v1.11.0 | [`v1.11.0`](https://github.com/chainguard-actions/codelytv-pr-size-labeler/tree/v1.11.0) | [`e1869bf`](https://github.com/codelytv/pr-size-labeler/commit/e1869bf36de18c36cd132495c39f53c135b689a3) |
-| v1.11.1 | [`v1.11.1`](https://github.com/chainguard-actions/codelytv-pr-size-labeler/tree/v1.11.1) | [`4e3aa0f`](https://github.com/codelytv/pr-size-labeler/commit/4e3aa0f77f348c8066513d453515316ffa01a607) |
-| v1.12.0 | [`v1.12.0`](https://github.com/chainguard-actions/codelytv-pr-size-labeler/tree/v1.12.0) | [`19c335e`](https://github.com/codelytv/pr-size-labeler/commit/19c335e7695ba922de938806dd129f0a9b992644) |
+| Version | Tag | Upstream commit | Hardening report |
+|---------|-----|-----------------|------------------|
+| v1.10.0 | [`v1.10.0`](https://github.com/chainguard-actions/codelytv-pr-size-labeler/tree/v1.10.0) | — | [`HARDENING.md`](https://github.com/chainguard-actions/codelytv-pr-size-labeler/blob/v1.10.0/HARDENING.md) |
+| v1.10.1 | [`v1.10.1`](https://github.com/chainguard-actions/codelytv-pr-size-labeler/tree/v1.10.1) | — | [`HARDENING.md`](https://github.com/chainguard-actions/codelytv-pr-size-labeler/blob/v1.10.1/HARDENING.md) |
+| v1.10.2 | [`v1.10.2`](https://github.com/chainguard-actions/codelytv-pr-size-labeler/tree/v1.10.2) | [`1c34223`](https://github.com/codelytv/pr-size-labeler/commit/1c3422395d899286d5ee2c809fd5aed264d5eb9b) | [`HARDENING.md`](https://github.com/chainguard-actions/codelytv-pr-size-labeler/blob/v1.10.2/HARDENING.md) |
+| v1.10.3 | [`v1.10.3`](https://github.com/chainguard-actions/codelytv-pr-size-labeler/tree/v1.10.3) | [`4ec6770`](https://github.com/codelytv/pr-size-labeler/commit/4ec67706cd878fbc1c8db0a5dcd28b6bb412e85a) | [`HARDENING.md`](https://github.com/chainguard-actions/codelytv-pr-size-labeler/blob/v1.10.3/HARDENING.md) |
+| v1.10.4 | [`v1.10.4`](https://github.com/chainguard-actions/codelytv-pr-size-labeler/tree/v1.10.4) | [`095a41f`](https://github.com/codelytv/pr-size-labeler/commit/095a41fca88b8764fd9e008ad269bcdb82bb38b9) | [`HARDENING.md`](https://github.com/chainguard-actions/codelytv-pr-size-labeler/blob/v1.10.4/HARDENING.md) |
+| v1.10.5 | [`v1.10.5`](https://github.com/chainguard-actions/codelytv-pr-size-labeler/tree/v1.10.5) | [`3e1170d`](https://github.com/codelytv/pr-size-labeler/commit/3e1170d6309cd47d537ffd8b23854a8339057e9d) | [`HARDENING.md`](https://github.com/chainguard-actions/codelytv-pr-size-labeler/blob/v1.10.5/HARDENING.md) |
+| v1.11.0 | [`v1.11.0`](https://github.com/chainguard-actions/codelytv-pr-size-labeler/tree/v1.11.0) | [`e1869bf`](https://github.com/codelytv/pr-size-labeler/commit/e1869bf36de18c36cd132495c39f53c135b689a3) | [`HARDENING.md`](https://github.com/chainguard-actions/codelytv-pr-size-labeler/blob/v1.11.0/HARDENING.md) |
+| v1.11.1 | [`v1.11.1`](https://github.com/chainguard-actions/codelytv-pr-size-labeler/tree/v1.11.1) | [`4e3aa0f`](https://github.com/codelytv/pr-size-labeler/commit/4e3aa0f77f348c8066513d453515316ffa01a607) | [`HARDENING.md`](https://github.com/chainguard-actions/codelytv-pr-size-labeler/blob/v1.11.1/HARDENING.md) |
+| v1.12.0 | [`v1.12.0`](https://github.com/chainguard-actions/codelytv-pr-size-labeler/tree/v1.12.0) | [`19c335e`](https://github.com/codelytv/pr-size-labeler/commit/19c335e7695ba922de938806dd129f0a9b992644) | [`HARDENING.md`](https://github.com/chainguard-actions/codelytv-pr-size-labeler/blob/v1.12.0/HARDENING.md) |
 
 ## Privacy
 
